@@ -1,0 +1,67 @@
+{% extends "::base.html.twig" %}
+{% block title %}Список счетов для загрузки в ЭСКУЛАП(ШАГ 2){% endblock %}
+{% block content %}
+<h4>Список счетов для загрузки в ЭСКУЛАП(ШАГ 2)</h4>
+<form id="read1c" action="/buh-pay/save" method="POST" enctype="multipart/form-data">
+    <label class="label_block">блокировка<input type = 'checkbox' checked = "checked" name = "block"></label><br>
+    <table class = "table table-hover font-size-10">
+
+        {% for key, schet in schets %}
+
+            <tr class = "ser">
+                <td colspan="11" style="text-align: center">
+                    {{ schet.short_name | raw }} /  {{ key }}
+                </td>
+            </tr>
+            <tr class = "ser">
+                <td style="width: 80px;">Дата операции</td>
+                <td style="width: 100px;">Дата</td>
+                <td>Счет.Плательщик</td>
+                <td>ИНН.Плательщик</td>
+                <td>Номер</td>
+                <td>Сумма</td>
+                <td>Комментарий</td>
+                <td>ИНН</td>
+                <td>Уникальный код</td>
+                <td>Статус</td>
+                <td>Загрузить независимо от статуса</td>
+            </tr>
+
+            {% for k, v in schet['data'] %}
+
+                <input type = "hidden" name = "D_OPERATION[{{ k }}]" value = "{{ v.D_OPERATION }}">
+                <input type = "hidden" name = "D_DOC[{{ k }}]" value = "{{ v.D_DOC }}">
+                <input type = "hidden" name = "CORESPOND[{{ k }}]" value = "{{ v.CORESPOND }}">
+                <input type = "hidden" name = "NUMDOC[{{ k }}]" value = "{{ v.NUMDOC }}">
+                <input type = "hidden" name = "CREDIT[{{ k }}]" value = "{{ v.CREDIT }}">
+                <input type = "hidden" name = "COMMENT[{{ k }}]" value = "{{ v.COMMENT }}">
+                <input type = "hidden" name = "INN_CORESPOND[{{ k }}]" value = "{{ v.INN_CORESPOND }}">
+                <input type = "hidden" name = "MD5[{{ k }}]" value = "{{ v.MD5 }}">
+                <input type = "hidden" name = "MD5_2[{{ k }}]" value = "{{ v.MD5_2 }}">
+                <input type = "hidden" name = "status[{{ k }}]" value = "{{ v.status.num }}">
+                {% if v.id_direction is  defined %}
+                    <input type = "hidden" name = "id_direction[{{ k }}]" value = "{{ v.id_direction }}">
+                    {% else %}
+                        <input type = "hidden" name = "id_direction[{{ k }}]" value = "0">
+                {% endif %}
+                <tr class = "{{ v.status.color }}">
+                    <td>{{ v.D_OPERATION }}</td>
+                    <td>{{ v.D_DOC }}</td>
+                    <td>{{ v.PAYER_SCHET }}</td>
+                    <td>{{ v.CORESPOND }}</td>
+                    <td>{{ v.NUMDOC }}</td>
+                    <td>{{ v.CREDIT }}</td>
+                    <td>{{ v.COMMENT }}</td>
+                    <td>{{ v.INN_CORESPOND }}</td>
+                    <td>{{ v.MD5 }}</td>
+                    <td>{{ v.status.text }}</td>
+                    <td><input type = "checkbox" name = "download[{{ k }}]"></td>
+                </tr>
+            {% endfor %}
+        {% endfor %}
+    </table>
+    <input class = "b_button btn btn-default" type="submit" value="Загрузить">
+</form>
+{% endblock %}
+
+

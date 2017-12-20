@@ -1,0 +1,52 @@
+{% extends "::base.html.twig" %}
+{% block title %}Информация по загрузке(ШАГ 3){% endblock %}
+{% block content %}
+<h4>Информация по загрузке(ШАГ 3)</h4>
+<ul>
+    <li>Всего записей: {{ allTask }}</li>
+    <li>Нет счета:  {{ notSchet }}</li>
+    <li>Фильтр блокировки:  {{ filter }}</li>
+    <li>Новых записей:  {{ count }}</li>
+    <li>Дубликатов:  {{ double }}</li>
+    <li>Блокировка:
+        {% if block is null %}
+                Выключена
+            {% else %}
+                Включена
+         {% endif %}
+    </li>
+</ul>
+{% if schets.D_OPERATION is empty %}
+<table id = "id_table"  class = "table table-condensed table-bordered">
+        <thead>
+            <th style="width: 80px;">Дата операции</th>
+            <th style="width: 100px;">Дата</th>
+            <th>ИНН.Плательщик</th>
+            <th>Номер</th>
+            <th>Сумма</th>
+            <th>Комментарий</th>
+            <th>ИНН</th>
+            <th>Уникальный код</th>
+            <th>Направление</th>
+            <th class="filter-select filter-exact tablesorter-header bootstrap-header">Статус</th>
+        </thead>
+        <tbody>
+        {% for k,v in schets.D_OPERATION %}
+        <?foreach($schets['D_OPERATION'] as $k => $v):?>
+            <tr class = "{{ schets['change_color'][k] }}">
+                <td>{{ v }}</td>
+                <td>{{ schets.D_DOC[k] }}</td>
+                <td>{{ schets.CORESPOND[k] }}</td>
+                <td>{{ schets.NUMDOC[k] }}</td>
+                <td>{{ schets.CREDIT[k] }}</td>
+                <td>{{ schets.COMMENT[k] }}</td>
+                <td>{{ schets.INN_CORESPOND[k] }}</td>
+                <td>{{ schets.MD5[k] }}</td>
+                <td>{{ schets.short_name[k] }}</td>
+                <td>{{ schets.change[k] }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+</table>
+{% endif %}
+{% endblock %}

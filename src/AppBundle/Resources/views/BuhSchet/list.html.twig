@@ -1,0 +1,37 @@
+{% extends "::base.html.twig" %}
+
+{% block title %}Список Счетов{% endblock %}
+
+{% block content %}
+    <h1>Список Счетов</h1>
+    <div class="count">
+        {{ pagination.getTotalItemCount }}
+    </div>
+    <table>
+        <tr>
+            {# sorting of properties based on query components #}
+            <th>{{ knp_pagination_sortable(pagination, 'Id', 'id_schet') }}</th>
+            <th{% if pagination.isSorted('id_direction') %} class="sorted"{% endif %}>{{ knp_pagination_sortable(pagination, 'id_direction', 'id_direction') }}</th>
+            <th{% if pagination.isSorted('schet') %} class="sorted"{% endif %}>{{ knp_pagination_sortable(pagination, 'schet', 'schet') }}</th>
+            <th></th>
+        </tr>
+
+        {# table body #}
+        {% for schet in pagination %}
+            <tr {% if loop.index is odd %}class="color"{% endif %}>
+                <td>{{ schet.schet }}</td>
+                <td>{{ schet.idDirection.shortName }}</td>
+                <td>
+                    <a href="{{ url('schet_del', {'id' : schet.idSchet}  ) }}">Удалить</a>
+                    <a href="{{ url('schet_edit', {'id' : schet.idSchet} ) }}">Редактировать</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+    {# display navigation #}
+    <div class="navigation">
+        {{ knp_pagination_render(pagination) }}
+    </div>
+
+
+{% endblock %}

@@ -1,0 +1,123 @@
+imports:
+    - { resource: parameters.yml }
+    - { resource: security.yml }
+    - { resource: services.yml }
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# http://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
+parameters:
+    locale: en
+
+framework:
+    #esi:             ~
+    #translator:      { fallbacks: ['%locale%'] }
+    secret:          '%secret%'
+    router:
+        resource: '%kernel.root_dir%/config/routing.yml'
+        strict_requirements: ~
+    form:            ~
+    csrf_protection: ~
+    validation:      { enable_annotations: true }
+    serializer:
+        enabled: true
+        #enable_annotations: true
+    templating:
+        engines: ['twig']
+    default_locale:  '%locale%'
+    trusted_hosts:   ~
+    trusted_proxies: ~
+    session:
+        # http://symfony.com/doc/current/reference/configuration/framework.html#handler-id
+        handler_id:  session.handler.native_file
+        save_path:   "%kernel.root_dir%/../var/sessions/%kernel.environment%"
+    fragments:       ~
+    http_method_override: true
+    assets: ~
+    php_errors:
+        log: true
+
+# Twig Configuration
+twig:
+    debug:            '%kernel.debug%'
+    strict_variables: '%kernel.debug%'
+    form_themes:
+           - 'bootstrap_3_layout.html.twig'
+    cache: false
+
+# Doctrine Configuration (needed for Jackalope Doctrine DBAL)
+doctrine:
+    dbal:
+        driver:   pdo_sqlite
+        host:     '%database_host%'
+        port:     '%database_port%'
+        dbname:   '%database_name%'
+        user:     '%database_user%'
+        password: '%database_password%'
+        charset:  UTF8
+        path:     '%database_path%'
+    orm:
+          auto_mapping: true
+          # the standard distribution overrides this to be true in debug, false otherwise
+          auto_generate_proxy_classes: false
+          proxy_namespace: Proxies
+          proxy_dir: '%kernel.cache_dir%/doctrine/orm/Proxies'
+          default_entity_manager: default
+          metadata_cache_driver: null
+          query_cache_driver: null
+          result_cache_driver: null
+# Doctrine PHPCR-ODM configuration
+doctrine_phpcr:
+    session:
+        backend:   '%phpcr_backend%'
+        workspace: '%phpcr_workspace%'
+        username:  '%phpcr_user%'
+        password:  '%phpcr_password%'
+    odm:
+        auto_mapping: true
+        auto_generate_proxy_classes: '%kernel.debug%'
+
+# Jackalope Metadata and Node Cache services
+doctrine_cache:
+    providers:
+        phpcr_meta:
+            type: file_system
+        phpcr_nodes:
+            type: file_system
+
+# Main Cmf Configuration
+cmf_core:
+    persistence:
+        phpcr: true
+        # if you want another basepath
+        # basepath: /custom/basepath
+    publish_workflow: false
+
+# Cmf Routing Configuration
+#cmf_routing:
+#    dynamic:
+#        templates_by_class:
+#            Symfony\Cmf\Bundle\SimpleCmsBundle\Doctrine\Phpcr\Page: 'page/index.html.twig'
+#            Symfony\Cmf\Bundle\ContentBundle\Doctrine\Phpcr\StaticContent: 'page/index.html.twig'
+
+# Menu Configuration
+#knp_menu:
+#    twig: true
+
+# Block Configuration
+sonata_block:
+    default_contexts: [cms]
+
+# Swiftmailer Configuration
+swiftmailer:
+    transport: '%mailer_transport%'
+    host:      '%mailer_host%'
+    username:  '%mailer_user%'
+    password:  '%mailer_password%'
+    spool:     { type: memory }
+fos_user:
+    db_driver: orm # other valid values are 'mongodb', 'couchdb' and 'propel'
+    firewall_name: main
+    user_class: AppBundle\Entity\User
+    from_email:
+            address: you@example.com
+            sender_name: You

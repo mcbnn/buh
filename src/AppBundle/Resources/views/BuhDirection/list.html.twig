@@ -1,0 +1,42 @@
+{% extends "::base.html.twig" %}
+
+{% block title %}Список Направлений{% endblock %}
+
+{% block content %}
+    <h1>Список Направлений</h1>
+    <div class="count">
+        {{ pagination.getTotalItemCount }}
+    </div>
+    <table>
+        <tr>
+            {# sorting of properties based on query components #}
+            <th>{{ knp_pagination_sortable(pagination, 'Id', 'id_director') }}</th>
+            <th{% if pagination.isSorted('alias') %} class="sorted"{% endif %}>{{ knp_pagination_sortable(pagination, 'alias', 'alias') }}</th>
+            <th{% if pagination.isSorted('full_name') %} class="sorted"{% endif %}>{{ knp_pagination_sortable(pagination, 'full_name', 'full_name') }}</th>
+            <th{% if pagination.isSorted('short_name') %} class="sorted"{% endif %}>{{ knp_pagination_sortable(pagination, 'short_name', 'short_name') }}</th>
+            <th{% if pagination.isSorted('firebird') %} class="sorted"{% endif %}>{{ knp_pagination_sortable(pagination, 'firebird', 'firebird') }}</th>
+            <th></th>
+        </tr>
+
+        {# table body #}
+        {% for direction in pagination %}
+            <tr {% if loop.index is odd %}class="color"{% endif %}>
+                <td>{{ direction.idDirection }}</td>
+                <td>{{ direction.alias }}</td>
+                <td>{{ direction.fullName }}</td>
+                <td>{{ direction.shortName }}</td>
+                <td>{{ direction.firebird }}</td>
+                <td>
+                    <a href="{{ url('del_direction', {'id' : direction.idDirection}  ) }}">Удалить</a>
+                    <a href="{{ url('edit_direction', {'id' : direction.idDirection} ) }}">Редактировать</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+    {# display navigation #}
+    <div class="navigation">
+        {{ knp_pagination_render(pagination) }}
+    </div>
+
+
+{% endblock %}
