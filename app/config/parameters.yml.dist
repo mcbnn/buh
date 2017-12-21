@@ -42,3 +42,6 @@ parameters:
     debug_redirects:        false
     use_assetic_controller: true
     brochures_directory: '%kernel.project_dir%/web/uploads'
+     sqlup:
+            pass: 123qweASD
+            user: SYSDBA
