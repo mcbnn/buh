@@ -12,6 +12,10 @@ security:
             id: fos_user.user_provider.username
 
     firewalls:
+        register:
+                pattern:  ^/register$
+                anonymous: true
+                security: false
         login:
             pattern:  ^/login$
             anonymous: true
