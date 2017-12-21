@@ -146,7 +146,7 @@ class BuhPayController extends Controller {
                 $buhDirection = $storage->findOneBy(
                     ['idDirection' => $id_direction]
                 );
-                $post['short_name'][$k] = $buhDirection->getShortName();
+          
                 $connect = $buhDirection->getFirebird();
                 $pu = $this->container->getParameter('sqlup');
                 $db = new \PDO((string)$connect, $pu['user'], $pu['pass']);
