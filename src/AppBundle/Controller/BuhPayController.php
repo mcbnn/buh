@@ -162,7 +162,7 @@ class BuhPayController extends Controller {
                     $data['COMMENT'] = $post['COMMENT'][ $k ];
                     $data['INN_CORESPOND'] = $post['INN_CORESPOND'][ $k ];
                     $data['MD5'] = $post['MD5'][ $k ];
-
+                    var_dump($data);
                     $sql = "INSERT INTO BANK (
 													ID_BANK, 
 													D_OPERATION,
@@ -180,6 +180,7 @@ class BuhPayController extends Controller {
 
 
                     try {
+                        var_dump($sql);
                         $db->query($sql);
                         $post['change'][ $k ] = "Запись произведена";
                         $post['change_color'][ $k ] = 'b_white';
