@@ -139,7 +139,7 @@ class BuhPayController extends Controller {
                 $post['change'][$k] = "Запись не произведена";
                 $post['change_color'][$k] = 'b_block';
                 $status = $post['status'][$k];
-
+                if(!$post['id_direction'])continue;
                 if (!isset($post['download'][$k])) {
                     if (self::STATUS_NUM_NOT_SCHET == $status) {
                         $notSchet++;
