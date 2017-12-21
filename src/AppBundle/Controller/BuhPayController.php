@@ -324,24 +324,26 @@ class BuhPayController extends Controller {
             $schet[ $getSchet ]['data'][ $k ]['status']['text'] = self::STATUS_OK;
             $schet[ $getSchet ]['data'][ $k ]['status']['color'] = self::STATUS_COLOR_OK;
 
-
             $direction = $this->getDirection($schet[ $getSchet ]['data'][ $k ]['COMMENT']);
+
             if($direction){
-              $schet[ $getSchet ]['data'][ $k ]['short_name'] = $direction->getShortName();
-              $schet[ $getSchet ]['data'][ $k ]['id_direction'] = $direction->getIdDirection();
+                $schet[ $getSchet ]['data'][ $k ]['short_name'] = $direction->getShortName();
+                $schet[ $getSchet ]['data'][ $k ]['id_direction'] = $direction->getIdDirection();
+                $connect = $direction->getFirebird();
+                $pu = $this->container->getParameter('sqlup');
+                $db = new \PDO((string)$connect, $pu['user'], $pu['pass']);
+                $schet[ $getSchet ]['data'][ $k ]['CREDIT'] = $credit;
+                $sql = "Select * from BANK where md5 = '$md5' or md5  = '$md5_2'";
+                $st = $db->prepare($sql);
+                $st->execute();
+                $rl = $st->fetch();
             }
             else{
-              $schet[ $getSchet ]['data'][ $k ]['short_name'] = 'Направление не выбрано';
-              $schet[ $getSchet ]['data'][ $k ]['id_direction'] = 0;
+                $schet[ $getSchet ]['data'][ $k ]['short_name'] = 'Направление не выбрано';
+                $schet[ $getSchet ]['data'][ $k ]['id_direction'] = 0;
+                $rl = 0;
             }
-            $connect = $direction->getFirebird();
-            $pu = $this->container->getParameter('sqlup');
-            $db = new \PDO((string)$connect, $pu['user'], $pu['pass']);
-            $schet[ $getSchet ]['data'][ $k ]['CREDIT'] = $credit;
-            $sql = "Select * from BANK where md5 = '$md5' or md5  = '$md5_2'";
-            $st = $db->prepare($sql);
-            $st->execute();
-            $rl = $st->fetch();
+
 
             if ($rl) {
             $schet[ $getSchet ]['data'][ $k ]['status']['num'] = self::STATUS_NUM_CHECK_SQULAP;
