@@ -9,11 +9,6 @@
         {% for key, schet in schets %}
 
             <tr class = "ser">
-                <td colspan="11" style="text-align: center">
-                    {{ schet.short_name | raw }} /  {{ key }}
-                </td>
-            </tr>
-            <tr class = "ser">
                 <td style="width: 80px;">Дата операции</td>
                 <td style="width: 100px;">Дата</td>
                 <td>Счет.Плательщик</td>
@@ -24,6 +19,7 @@
                 <td>ИНН</td>
                 <td>Уникальный код</td>
                 <td>Статус</td>
+                <td>Направление</td>
                 <td>Загрузить независимо от статуса</td>
             </tr>
 
@@ -55,7 +51,20 @@
                     <td>{{ v.INN_CORESPOND }}</td>
                     <td>{{ v.MD5 }}</td>
                     <td>{{ v.status.text }}</td>
-                    <td><input type = "checkbox" name = "download[{{ k }}]"></td>
+                    <td>
+
+                        <select name = "id_direction[{{ k }}]">
+                            <option value = 0>Не выбрано напрвление</option>
+                            {% for k1, v1 in directions %}
+                                <option {% if v.id_direction == v1.idDirection %} selected {% endif %} value = "{{ v1.idDirection }}">{{ v1.alias }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+
+
+
+                        <input type = "checkbox" name = "download[{{ k }}]"></td>
                 </tr>
             {% endfor %}
         {% endfor %}

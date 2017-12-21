@@ -86,6 +86,7 @@ class BuhPayController extends Controller {
             $em->persist($history);
 
             $client = new Parser($this->getParameter('brochures_directory').'/'.$fileName);
+
             $schets = $this->validSchet($client->documents);
 
             if (!$schets) {
@@ -95,10 +96,13 @@ class BuhPayController extends Controller {
                 );
             }
 
+            $directions =  $em->getRepository(BuhDirection::class)->findAll();
+
             return $this->render(
                 'AppBundle:BuhPay:list-schet-parse.html.twig',
                 array(
-                    'schets' => $schets
+                    'schets' => $schets,
+                    'directions' => $directions
                 )
             );
         }
@@ -115,7 +119,8 @@ class BuhPayController extends Controller {
     /**
      * @Route("/buh-pay/save", name="save")
      */
-    public function saveAction(Request $request) {
+    public function saveAction(Request $request)
+    {
         $isPOST = $request->isMethod('POST');
         /** @var \Doctrine\ORM\EntityManager $em */
         $em = $this->getEntitymanager();
@@ -123,100 +128,127 @@ class BuhPayController extends Controller {
         if ($isPOST) {
             $post = $request->request->all();
             $block = $request->request->get('block', null);
-            var_Dump(1);
-            if (!empty($post['D_OPERATION'])) {
-                var_Dump(2);
-                $count = 0;
-                $double = 0;
-                $allTask = 0;
-                $notSchet = 0;
-                $filter = 0;
-                foreach ($post['D_OPERATION'] as $k => $v) {
-                    var_Dump(3);
-                    $allTask++;
-                    $post['change'][ $k ] = "Запись не произведена";
-                    $post['change_color'][ $k ] = 'b_block';
-                    $status = $post['status'][ $k ];
+            $count = 0;
+            $double = 0;
+            $allTask = 0;
+            $notSchet = 0;
+            $filter = 0;
+            foreach ($post['D_OPERATION'] as $k => $v) {
 
-                    if(!isset($post['download'][$k])) {
-                        if (self::STATUS_NUM_NOT_SCHET == $status) $notSchet++;
-                        if (self::STATUS_NUM_CHECK_SQULAP == $status) $double++;
-                        if (self::STATUS_NUM_BLOCK == $status) $filter++;
+                $allTask++;
+                $post['change'][$k] = "Запись не произведена";
+                $post['change_color'][$k] = 'b_block';
+                $status = $post['status'][$k];
+
+                if (!isset($post['download'][$k])) {
+                    if (self::STATUS_NUM_NOT_SCHET == $status) {
+                        $notSchet++;
+                    }
+                    if (self::STATUS_NUM_CHECK_SQULAP == $status) {
+                        $double++;
+                    }
+                    if (self::STATUS_NUM_BLOCK == $status) {
+                        $filter++;
+                    }
+                    if (($block == 'on' and $status
+                        == self::STATUS_NUM_BLOCK)
+                    ) {
+                        continue;
+                    } elseif ($status != self::STATUS_NUM_BLOCK and $status
+                        != self::STATUS_NUM_OK
+                    ) {
                         continue;
                     }
 
-                    $id_direction = $post['id_direction'][ $k ];
-                    $storage = $em->getRepository(BuhDirection::class);
-                    $buhDirection = $storage->findOneBy([ 'idDirection' => $id_direction ]);
-                    $post['short_name'][ $k ] = $buhDirection->getShortName();
-                    $connect = $buhDirection->getFirebird();
-                    $pu = $this->container->getParameter('sqlup');
-                    $db = new \PDO((string)$connect, $pu['user'], $pu['pass']);
+                    $sql
+                        = "Select * from BANK where md5 = '{$post['MD5'][ $k ]}' or md5 = '{$post['MD5_2'][$k]}'";
 
-                    $data = [];
-                    $data['D_OPERATION'] = $v;
-                    $data['D_DOC'] = $post['D_DOC'][ $k ];
-                    $data['CORESPOND'] = $post['CORESPOND'][ $k ];
-                    $data['NUMDOC'] = $post['NUMDOC'][ $k ];
-                    $data['CREDIT'] = $post['CREDIT'][ $k ];
-                    $data['COMMENT'] = $post['COMMENT'][ $k ];
-                    $data['INN_CORESPOND'] = $post['INN_CORESPOND'][ $k ];
-                    $data['MD5'] = $post['MD5'][ $k ];
-                    var_dump($data);
-                    $sql = "INSERT INTO BANK (
-													ID_BANK, 
-													D_OPERATION,
-													D_DOC,
-													CORESPOND,
-													NUMDOC, 
-													CREDIT, 
-													COMMENT, 
-													INN_CORESPOND, 
-													MD5 
-													) 
-													VALUES (gen_id(GEN_OBJECT,1),
-													'" . implode('\',\'', $data) . "'
-													)";
+                    $st = $db->prepare($sql);
+                    $st->execute();
+                    $rl = $st->fetch();
 
-
-                    try {
-                        var_dump($sql);
-                        $db->query($sql);
-                        $post['change'][ $k ] = "Запись произведена";
-                        $post['change_color'][ $k ] = 'b_white';
-                        $count++;
-                    }
-                    catch (\Exception $e) {
-                        $post['change'][ $k ] = "Запись не произведена при внесение в эскулап";
-                        syslog(LOG_ERR, json_encode([
-                            'name'       => 'buh_squlap',
-                            'getMessage' => $e->getMessage(),
-                        ]));
-
+                    if ($rl) {
+                        $post['change'][$k] = "Такая запись уже существует";
+                        $post['change_color'][$k] = 'b_block';
+                        continue;
                     }
 
                 }
+
+                $id_direction = $post['id_direction'][$k];
+                $storage = $em->getRepository(BuhDirection::class);
+                $buhDirection = $storage->findOneBy(
+                    ['idDirection' => $id_direction]
+                );
+                $post['short_name'][$k] = $buhDirection->getShortName();
+                $connect = $buhDirection->getFirebird();
+                $pu = $this->container->getParameter('sqlup');
+                $db = new \PDO((string)$connect, $pu['user'], $pu['pass']);
+
+                $data = [];
+                $data['D_OPERATION'] = $v;
+                $data['D_DOC'] = $post['D_DOC'][$k];
+                $data['CORESPOND'] = $post['CORESPOND'][$k];
+                $data['NUMDOC'] = $post['NUMDOC'][$k];
+                $data['CREDIT'] = $post['CREDIT'][$k];
+                $data['COMMENT'] = $post['COMMENT'][$k];
+                $data['INN_CORESPOND'] = $post['INN_CORESPOND'][$k];
+                $data['MD5'] = $post['MD5'][$k];
+
+                $sql
+                    = "INSERT INTO BANK (
+                                                ID_BANK, 
+                                                D_OPERATION,
+                                                D_DOC,
+                                                CORESPOND,
+                                                NUMDOC, 
+                                                CREDIT, 
+                                                COMMENT, 
+                                                INN_CORESPOND, 
+                                                MD5 
+                                                ) 
+                                                VALUES (gen_id(GEN_OBJECT,1),
+                                                '".implode('\',\'', $data)."'
+                                                )";
+
+
+                try {
+                    $db->query($sql);
+                    $post['change'][$k] = "Запись произведена";
+                    $post['change_color'][$k] = 'b_white';
+                    $count++;
+                } catch (\Exception $e) {
+                    $post['change'][$k]
+                        = "Запись не произведена при внесение в эскулап";
+                    syslog(
+                        LOG_ERR,
+                        json_encode(
+                            [
+                                'name'       => 'buh_squlap',
+                                'getMessage' => $e->getMessage(),
+                            ]
+                        )
+                    );
+
+                }
+
+
             }
 
             return $this->render(
                 'AppBundle:BuhPay:save-send.html.twig',
-               [
-                   'schets'   => $post,
-                   'count'    => $count,
-                   'double'   => $double,
-                   'allTask'  => $allTask,
-                   'notSchet' => $notSchet,
-                   'filter'   => $filter,
-                   'block'    => $block
-               ]
+                [
+                    'schets'   => $post,
+                    'count'    => $count,
+                    'double'   => $double,
+                    'allTask'  => $allTask,
+                    'notSchet' => $notSchet,
+                    'filter'   => $filter,
+                    'block'    => $block,
+                ]
             );
         }
-
-
     }
-
-
-
 
     public function validSchet($content) {
 
@@ -230,27 +262,6 @@ class BuhPayController extends Controller {
             $getPayerSchet = ($d['data']['ПлательщикСчет']) ? $d['data']['ПлательщикСчет'] : $d['data']['ПлательщикРасчСчет'];
             $getSchet = ($d['data']['ПолучательСчет']) ? $d['data']['ПолучательСчет'] : $d['data']['ПолучательРасчСчет'];
             if ($d['data']['ДатаСписано']) continue;
-            $storage = $em->getRepository(BuhSchet::class);
-            $buhPayerSchet = $storage->findOneBy([
-                'schet' => $getPayerSchet,
-                'del'   => NULL
-            ]);
-            $buhSchet = $storage->findOneBy([
-                'schet' => $getSchet,
-                'del'   => NULL
-            ]);
-
-            if ($buhSchet) {
-                if (!isset($schet[ $getSchet ]['schet'])) {
-                    $schet[ $getSchet ]['short_name'] = $buhSchet->getIdDirection()->getShortName();
-                    $schet[ $getSchet ]['id_direction'] = $buhSchet->getIdDirection()->getIdDirection();
-                }
-            }
-            else {
-                $schet[ $getSchet ]['short_name'] = "<span style = 'color:red'>Не выбрано направление</span>";
-                $schet[ $getSchet ]['id_direction'] = 0;
-            }
-
             $schet[ $getSchet ]['data'][ $k ]['D_OPERATION'] = $d['data']['ДатаПоступило'];
             $schet[ $getSchet ]['data'][ $k ]['D_DOC'] = $d['data']['Дата'];
             $schet[ $getSchet ]['data'][ $k ]['CORESPOND'] = $d['data']['ПлательщикИНН'] . ' ';
@@ -265,7 +276,7 @@ class BuhPayController extends Controller {
 
             $schet[ $getSchet ]['data'][ $k ]['COMMENT'] = "";
             $schet[ $getSchet ]['data'][ $k ]['PAYER_SCHET'] = $getPayerSchet;
-            $schet[ $getSchet ]['data'][ $k ]['SCHET'] = $buhSchet;
+            $schet[ $getSchet ]['data'][ $k ]['SCHET'] = $getSchet;
             if (isset($d['data']['НазначениеПлатежа']) and !empty($d['data']['НазначениеПлатежа'])) $schet[ $getSchet ]['data'][ $k ]['COMMENT'] .= $d['data']['НазначениеПлатежа'];
             if (isset($d['data']['НазначениеПлатежа 1']) and !empty($d['data']['НазначениеПлатежа 1'])) $schet[ $getSchet ]['data'][ $k ]['COMMENT'] .= $d['data']['НазначениеПлатежа 1'];
             if (isset($d['data']['НазначениеПлатежа 2']) and !empty($d['data']['НазначениеПлатежа 2'])) $schet[ $getSchet ]['data'][ $k ]['COMMENT'] .= $d['data']['НазначениеПлатежа 2'];
@@ -309,41 +320,55 @@ class BuhPayController extends Controller {
 
             $schet[ $getSchet ]['data'][ $k ]['MD5'] = $md5;
             $schet[ $getSchet ]['data'][ $k ]['MD5_2'] = $md5_2;
-            $schet[ $getSchet ][ $k ]['data'] = $d['data'];
             $schet[ $getSchet ]['data'][ $k ]['status']['num'] = self::STATUS_NUM_OK;
             $schet[ $getSchet ]['data'][ $k ]['status']['text'] = self::STATUS_OK;
             $schet[ $getSchet ]['data'][ $k ]['status']['color'] = self::STATUS_COLOR_OK;
 
-            if (!$buhSchet) {
-                $schet[ $getSchet ]['data'][ $k ]['status']['num'] = self::STATUS_NUM_NOT_SCHET;
-                $schet[ $getSchet ]['data'][ $k ]['status']['text'] = self::STATUS_NOT_SCHET;
-                $schet[ $getSchet ]['data'][ $k ]['status']['color'] = self::STATUS_COLOR_NOT_SCHET;
 
+            $direction = $this->getDirection($schet[ $getSchet ]['data'][ $k ]['COMMENT']);
+            if($direction){
+              $schet[ $getSchet ]['data'][ $k ]['short_name'] = $direction->getShortName();
+              $schet[ $getSchet ]['data'][ $k ]['id_direction'] = $direction->getIdDirection();
             }
-            else {
-                $connect = $buhSchet->getIdDirection()->getFirebird();
-                $pu = $this->container->getParameter('sqlup');
-                $db = new \PDO((string)$connect, $pu['user'], $pu['pass']);
-                $schet[ $getSchet ]['data'][ $k ]['CREDIT'] = $credit;
-                $sql = "Select * from BANK where md5 = '$md5' or md5  = '$md5_2'";
-                $st = $db->prepare($sql);
-                $st->execute();
-                $rl = $st->fetch();
-                if ($rl) {
-                    $schet[ $getSchet ]['data'][ $k ]['status']['num'] = self::STATUS_NUM_CHECK_SQULAP;
-                    $schet[ $getSchet ]['data'][ $k ]['status']['text'] = self::STATUS_CHECK_SQULAP;
-                    $schet[ $getSchet ]['data'][ $k ]['status']['color'] = self::STATUS_COLOR_CHECK_SQULAP;
-                }
+            else{
+              $schet[ $getSchet ]['data'][ $k ]['short_name'] = 'Направление не выбрано';
+              $schet[ $getSchet ]['data'][ $k ]['id_direction'] = 0;
+            }
+            $connect = $direction->getFirebird();
+            $pu = $this->container->getParameter('sqlup');
+            $db = new \PDO((string)$connect, $pu['user'], $pu['pass']);
+            $schet[ $getSchet ]['data'][ $k ]['CREDIT'] = $credit;
+            $sql = "Select * from BANK where md5 = '$md5' or md5  = '$md5_2'";
+            $st = $db->prepare($sql);
+            $st->execute();
+            $rl = $st->fetch();
 
-                elseif (!empty($buhPayerSchet)) {
-                    $schet[ $getSchet ]['data'][ $k ]['status']['num'] = self::STATUS_NUM_BLOCK;
-                    $schet[ $getSchet ]['data'][ $k ]['status']['text'] = self::STATUS_BLOCK;
-                    $schet[ $getSchet ]['data'][ $k ]['status']['color'] = self::STATUS_COLOR_BLOCK;
-                }
+            if ($rl) {
+            $schet[ $getSchet ]['data'][ $k ]['status']['num'] = self::STATUS_NUM_CHECK_SQULAP;
+            $schet[ $getSchet ]['data'][ $k ]['status']['text'] = self::STATUS_CHECK_SQULAP;
+            $schet[ $getSchet ]['data'][ $k ]['status']['color'] = self::STATUS_COLOR_CHECK_SQULAP;
             }
+
         }
 
         return $schet;
+    }
+
+    protected function getDirection($comment = null){
+        if($comment == null)return false;
+
+        $id = false;
+        if(stristr($comment, '/СР'))$id = 1;
+        if(stristr($comment, '/СП'))$id = 2;
+        if(stristr($comment, '/СИ'))$id = 3;
+
+        if(!$id) return false;
+
+        $em = $this->getEntitymanager();
+
+        $direction = $em->getRepository(BuhDirection::class)->find($id);
+
+        return $direction;
     }
 
 
