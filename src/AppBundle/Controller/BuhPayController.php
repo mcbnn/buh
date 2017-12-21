@@ -139,14 +139,11 @@ class BuhPayController extends Controller {
                 $post['change'][$k] = "Запись не произведена";
                 $post['change_color'][$k] = 'b_block';
                 $status = $post['status'][$k];
-                if(!$post['id_direction'])continue;
+                if(!$post['id_direction'][$k])continue;
 
                 $id_direction = $post['id_direction'][$k];
-                $storage = $em->getRepository(BuhDirection::class);
-                $buhDirection = $storage->findOneBy(
-                    ['idDirection' => $id_direction]
-                );
-          
+                $buhDirection = $em->getRepository(BuhDirection::class)->find($id_direction);
+
                 $connect = $buhDirection->getFirebird();
                 $pu = $this->container->getParameter('sqlup');
                 $db = new \PDO((string)$connect, $pu['user'], $pu['pass']);
