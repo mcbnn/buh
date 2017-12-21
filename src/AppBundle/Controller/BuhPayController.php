@@ -123,13 +123,16 @@ class BuhPayController extends Controller {
         if ($isPOST) {
             $post = $request->request->all();
             $block = $request->request->get('block', null);
+            var_Dump(1);
             if (!empty($post['D_OPERATION'])) {
+                var_Dump(2);
                 $count = 0;
                 $double = 0;
                 $allTask = 0;
                 $notSchet = 0;
                 $filter = 0;
                 foreach ($post['D_OPERATION'] as $k => $v) {
+                    var_Dump(3);
                     $allTask++;
                     $post['change'][ $k ] = "Запись не произведена";
                     $post['change_color'][ $k ] = 'b_block';
