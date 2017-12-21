@@ -140,6 +140,18 @@ class BuhPayController extends Controller {
                 $post['change_color'][$k] = 'b_block';
                 $status = $post['status'][$k];
                 if(!$post['id_direction'])continue;
+
+                $id_direction = $post['id_direction'][$k];
+                $storage = $em->getRepository(BuhDirection::class);
+                $buhDirection = $storage->findOneBy(
+                    ['idDirection' => $id_direction]
+                );
+                $post['short_name'][$k] = $buhDirection->getShortName();
+                $connect = $buhDirection->getFirebird();
+                $pu = $this->container->getParameter('sqlup');
+                $db = new \PDO((string)$connect, $pu['user'], $pu['pass']);
+
+
                 if (!isset($post['download'][$k])) {
                     if (self::STATUS_NUM_NOT_SCHET == $status) {
                         $notSchet++;
@@ -175,15 +187,6 @@ class BuhPayController extends Controller {
 
                 }
 
-                $id_direction = $post['id_direction'][$k];
-                $storage = $em->getRepository(BuhDirection::class);
-                $buhDirection = $storage->findOneBy(
-                    ['idDirection' => $id_direction]
-                );
-                $post['short_name'][$k] = $buhDirection->getShortName();
-                $connect = $buhDirection->getFirebird();
-                $pu = $this->container->getParameter('sqlup');
-                $db = new \PDO((string)$connect, $pu['user'], $pu['pass']);
 
                 $data = [];
                 $data['D_OPERATION'] = $v;
